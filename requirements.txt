@@ -30,3 +30,4 @@ tornado==6.3.2
 truststore==0.7.0
 urllib3_secure_extra==0.1.0
 zstandard==0.21.0
+openai==0.28.0
