@@ -13,16 +13,54 @@ from langchain.schema import (
 )
 from datetime import datetime
 
+question_description = {
+    "Question 1": """
+    Calculating Virus Spread
+    People who study epidemiology use models to analyze the spread of disease. In this problem, we use a simple model.
+    When a person has a disease, they infect exactly R other people but only on the very next day. No person is infected more than once. 
+    We want to determine when a total of more than P people have had the disease.
+    
+    Input Specification
+    There are three lines of input. Each line contains one positive integer. 
+    The first line contains the value of P. 
+    The second line contains N, the number of people who have the disease on Day 0. 
+    The third line contains the value of R. Assume that P ≤ 10^7 and N ≤ P and R ≤ 10.
+    
+    Output Specification
+    Output the number of the first day on which the total number of people who have had the disease is greater than P.
+    """,
+    "Question 2": """
+    Eating Gems
+    When I eat my Gems (a type of chocolate) I always eat the red ones last. I separate them into their color groups and 
+    I start by eating the orange ones, then blue, green, yellow, pink, violet, brown and finally red. The red ones  are the best, 
+    so I eat them slowly one at a time. The other colors I eat quickly by the handful (my hand can hold a maximum of 7 Gems). 
+    I always finish all the Gems of one color before I move on to the next, so sometimes the last handful of a color isn't a full one.
+    But wait, there's more! I have turned my Gem-eating into a science. I know it always takes me exactly  
+    13 seconds to eat a handful of non-red Gems and I adjust my chewing rate so that I always take 13 seconds even if my hand is not 
+    completely full. When I eat the red Gems I like to take my time, so it takes me exactly  16  seconds to eat each one. 
+    I have a big box of Gems. After  I've finished sorting the colors, how long will it take me to eat them?
+    The input will contain N lines ( 50 ≤ N ≤ 200 ), where each line holds the color of a single Gems in lower case. 
+    Then the last line will read `end of box` meaning there are no more Gems in the box for that test case. Your program should output a 
+    single line indicating how long (in seconds) it will take me to eat the entire box according to the rules given above. 
+    """,
+    "Question 3": """
+    It is a well-researched fact that men in a restroom generally prefer to maximize  their distance from already occupied stalls, 
+    by occupying the middle of the longest sequence of unoccupied places. For example, consider the situation where all ten stalls are 
+    empty. - _ _ _ _ _ _ _ _ _ _. The first visitor will occupy a middle position: _ _ _ _ X _ _ _ _ _. The next visitor will be in the 
+    middle of the empty area at the right.    _ _ _ _ X _ _ X _ _. Given an array of bool values, where true indicates an occupied stall, 
+    find the position for the next visitor. Your computation should be placed in a function ``next_visitor(bool occupied[], int stalls)"""
+}
+print(question_description['Question 1'])
 # Function to serialize chat messages to JSON-serializable format with timestamps
-def serialize_chat_messages(chat_history):
+def serialize_chat_messages(chat_history, language):
     serialized_messages = []
     for message in chat_history:
         if isinstance(message, SystemMessage):
-            serialized_messages.append({'type': 'system', 'content': str(message.content), 'timestamp': datetime.now()})
+            serialized_messages.append({'type': 'system', 'content': str(message.content), 'timestamp': datetime.now(), 'language': language})
         elif isinstance(message, HumanMessage):
-            serialized_messages.append({'type': 'human', 'content': str(message.content), 'timestamp': datetime.now()})
+            serialized_messages.append({'type': 'human', 'content': str(message.content), 'timestamp': datetime.now(), 'language': language})
         elif isinstance(message, AIMessage):
-            serialized_messages.append({'type': 'ai', 'content': str(message.content), 'timestamp': datetime.now()})
+            serialized_messages.append({'type': 'ai', 'content': str(message.content), 'timestamp': datetime.now(), 'language': language})
     return serialized_messages
 
 
@@ -67,8 +105,8 @@ def handle_submit(question, text):
     st.success("Data submitted successfully!")
 
 # Function to save chat history to MongoDB
-def save_chat_history(user_id, chat_history):
-    serialized_chat = serialize_chat_messages(chat_history)
+def save_chat_history(user_id, chat_history, language):
+    serialized_chat = serialize_chat_messages(chat_history, language)
     chat_history_collection.update_one(
         {'user_id': user_id},
         {'$set': {'chat_history': serialized_chat}},
@@ -106,15 +144,17 @@ def update_language_preference(username, language):
     )
 
 
-def gptModel(input_user, language, user_id):
+def gptModel(input_user, language, user_id, question):
     update_language_preference(user_id, language)
+    print(f"Language: {language}")
+    print(f"Question: {question}")
     if language == 'Marathi':
-        chat = ChatOpenAI(model_name="gpt-4-1106-preview", temperature=0)
+        chat = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
         messages = [
             SystemMessage(content=f"{SystemPrompt}"),
             HumanMessage(content=
                         f"""
-                        You are mentoring a student who is trying to solve the following programming problem:\n\"{questionDescription}\"\n"
+                        You are mentoring a student who is trying to solve the following programming problem:\n\"{question_description[question]}\"\n"
                         The student will ask questions related to the problem. DO NOT OUTPUT THE SOLUTION OF THE ENTIRE PROBLEM. You can provide hints and suggestions to their questions. If they have questions related to programming concepts, you can answer them by providing snippets of code.\n
                         Only provide answers if it is related to the question.\n
                         Provide the answer in Marathi\n
@@ -122,15 +162,14 @@ def gptModel(input_user, language, user_id):
                         """),
         ]
     elif language == 'English':
-        chat = ChatOpenAI(model_name="gpt-4-1106-preview", temperature=0)
+        chat = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
         messages = [
             SystemMessage(content=f"{SystemPrompt}"),
             HumanMessage(content=
                         f"""
-                        You are mentoring a student who is trying to solve the following programming problem:"{questionDescription}
-                        The student will ask questions related to the problem. DO NOT OUTPUT THE SOLUTION OF THE ENTIRE PROBLEM. You can provide hints and suggestions to their questions. If they have questions related to programming concepts, you can answer them by providing snippets of code.\n
+                        You are mentoring a student who is trying to solve the following programming problem:"{question_description[question]}
+                        The student has to write code in C. The student will ask questions related to the problem. DO NOT OUTPUT THE SOLUTION OF THE ENTIRE PROBLEM. You can provide hints and suggestions to their questions. If they have questions related to programming concepts, you can answer them by providing snippets of code.\n
                         Only provide answers if it is related to the question.\n
-                        Provide the answer in Marathi\n
                         The student's question is: {input_user}
 
                         """),
@@ -150,9 +189,6 @@ def main():
             new_password = st.sidebar.text_input("New Password", type="password")
             if st.sidebar.button("Register"):
                 user_credentials = register_user(new_username, new_password)
-                # registered_users.append(user_credentials)
-                # save_registered_users(registered_users)  # Save the updated list
-                # st.session_state['registered_users'] = registered_users
                 st.sidebar.success("Registration successful. You can now login.")
             
         else:
@@ -162,26 +198,30 @@ def main():
                 if check_login(username, password):
                     st.session_state['logged_in'] = True
                     st.session_state['user_id'] = username
+                    st.experimental_rerun()  # Refresh the page
                 else:
                     st.sidebar.error("Incorrect username or password.")
 
     if 'logged_in' in st.session_state and st.session_state['logged_in']:
+        st.success("Logged in successfully!")
         user_id = st.session_state['user_id']
         key = f"messages_{user_id}"
         if key not in st.session_state:
             st.session_state[key] = [
                 SystemMessage(content="You are a translating bot.")
             ]
+        
 
-        st.header(f"GPT Helper (User: {user_id})")
+        st.header(f"Chatbot (User: {user_id})")
         st.sidebar.title("Navigation")
         page = st.sidebar.radio("Go to", ["Question 1", "Question 2", "Question 3"])
 
-        language = st.sidebar.selectbox("Select Language", ['Marathi', 'English'])
+        language = st.sidebar.selectbox("Output Language for the Chatbot", ['Marathi', 'English'])
 
         if page == "Question 1":
             st.subheader("Question 1")
-            st.image("./image 1.png", caption="Image 1")
+            st.image("./q1_1.png")
+            st.image("./q1_2.png")
             components.html(
                 """
                 <!DOCTYPE html>
@@ -211,11 +251,13 @@ def main():
             if fetch_latest_submission:
                 st.text_area("Your previous answer:", value=fetch_latest_submission['submissions']['answer'], height=100, key="text_area_Question 1")
             else:
-                st.text_area("Enter your text here:", key="text_area_Question 1", height=100)
+                st.text_area("Copy Paste your code here and click submit to save it:", key="text_area_Question 1", height=100)
 
         elif page == "Question 2":
             st.subheader("Question 2")
-            st.image("./image 2.png", caption="Image 2")
+            st.image("./q2_1.png")
+            st.image("./q2_2.png")
+            st.image("./q2_3.png")
             components.html(
                 """
                 <!DOCTYPE html>
@@ -244,11 +286,11 @@ def main():
             if fetch_latest_submission:
                 st.text_area("Your previous answer:", value=fetch_latest_submission['submissions']['answer'], height=100, key="text_area_Question 2")
             else:
-                st.text_area("Enter your text here:", key="text_area_Question 2", height=100)
+                st.text_area("Copy Paste your code here and click submit to save it:", key="text_area_Question 2", height=100)
 
         elif page == "Question 3":
             st.subheader("Question 3")
-            st.image("./image 3.png", caption="Image 3")
+            st.image("./q3.png")
             components.html(
                 """
                 <!DOCTYPE html>
@@ -277,7 +319,7 @@ def main():
             if fetch_latest_submission:
                 st.text_area("Your previous answer:", value=fetch_latest_submission['submissions']['answer'], height=100, key="text_area_Question 3")
             else:
-                st.text_area("Enter your text here:", key="text_area_Question 3", height=100)
+                st.text_area("Copy Paste your code here and click submit to save it:", key="text_area_Question 3", height=100)
         if st.button("Submit"):
             handle_submit(page, st.session_state[f"text_area_{page}"])
         
@@ -285,13 +327,13 @@ def main():
             if user_input:  # Check if there is user input
                     st.session_state[key].append(HumanMessage(content=user_input))
                     with st.spinner("Thinking..."):
-                        response = gptModel(user_input, language, user_id)
+                        response = gptModel(user_input, language, user_id, page)
                     st.session_state[key].append(
                         AIMessage(content=response))
 
                     # Save chat history to a file
                     chat_history = st.session_state.get(key, [])
-                    save_chat_history(user_id, chat_history)
+                    save_chat_history(user_id, chat_history, language)
 
                     # Clear the input box after sending the message
                     st.session_state[f"user_input_{user_id}"] = ""
