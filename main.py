@@ -171,7 +171,6 @@ def gptModel(input_user, language, user_id, question):
                         The student has to write code in C. The student will ask questions related to the problem. DO NOT OUTPUT THE SOLUTION OF THE ENTIRE PROBLEM. You can provide hints and suggestions to their questions. If they have questions related to programming concepts, you can answer them by providing snippets of code.\n
                         Only provide answers if it is related to the question.\n
                         The student's question is: {input_user}
-
                         """),
         ]
     response = chat(messages)
@@ -203,7 +202,6 @@ def main():
                     st.sidebar.error("Incorrect username or password.")
 
     if 'logged_in' in st.session_state and st.session_state['logged_in']:
-        st.success("Logged in successfully!")
         user_id = st.session_state['user_id']
         key = f"messages_{user_id}"
         if key not in st.session_state:
@@ -246,7 +244,6 @@ def main():
                 height=500,
                 width=700,
             )
-        
             fetch_latest_submission = submissions_collection.find_one({'user_id': user_id, 'submissions.question': 'Question 1'}, sort=[('submissions.timestamp', -1)])
             if fetch_latest_submission:
                 st.text_area("Your previous answer:", value=fetch_latest_submission['submissions']['answer'], height=100, key="text_area_Question 1")
@@ -338,6 +335,8 @@ def main():
                     # Clear the input box after sending the message
                     st.session_state[f"user_input_{user_id}"] = ""
 
+        def clear_chat():
+            st.session_state[key] = []  # Clear chat history
 
         with st.sidebar:
             user_input = st.text_input("Your message: ", key=f"user_input_{user_id}")
@@ -351,6 +350,9 @@ def main():
                     message(msg.content, is_user=True, key=f"{i}_{user_id}_user")
                 else:
                     message(msg.content, is_user=False, key=f"{i}_{user_id}_ai")
+            
+            if st.sidebar.button("Clear Chat", on_click=clear_chat):
+                pass
 
 if __name__ == '__main__':
     main()
