@@ -64,7 +64,7 @@ def serialize_chat_messages(chat_history, language):
     return serialized_messages
 
 
-MONGO_URL="mongodb+srv://avvalhalani:1234@db.aeoo5eo.mongodb.net/?retryWrites=true&w=majority&appName=DB"
+MONGO_URL="mongodb+srv://aahalani:1234@cluster0.2qrozjw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(MONGO_URL)
 db = client.DB_Dis
 
